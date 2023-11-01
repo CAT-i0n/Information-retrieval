@@ -1,37 +1,10 @@
-from tkinter import filedialog
-from tkinter.scrolledtext import ScrolledText
-import pandas as pd
 import tkinter as tk
-import os
-import re
-import sys
+from tkinter.scrolledtext import ScrolledText
 from functools import partial
 import webbrowser
 
-
-class HyperlinkManager:
-    def __init__(self, text):
-        self.text = text
-        self.text.tag_config("hyper", foreground="blue", underline=1)
-        self.text.tag_bind("hyper", "<Button-1>", self._click)
-
-        self.reset()
-
-    def reset(self):
-        self.links = {}
-
-    def add(self, action):
-        # add an action to the manager.  returns tags to use in
-        # associated text widget
-        tag = "hyper-%d" % len(self.links)
-        self.links[tag] = action
-        return "hyper", tag
-    
-    def _click(self, event):
-        for tag in self.text.tag_names(tk.CURRENT):
-            if tag[:6] == "hyper-":
-                self.links[tag]()
-                return
+from .managers.HyperlinkManager import HyperlinkManager
+from .Searcher import Searcher
 
 # def callback(url):
 #    print(11)
@@ -43,25 +16,29 @@ class App(tk.Tk):
         self.attributes('-type', 'splash')
         self.title('Editor')
         # self.geometry("800x500")
-        self.attributes('-type', 'splash')
         self.folder_path = tk.StringVar()
+        self.searcher = Searcher()
         self.__build()
 
     def __build(self):
-        # Entry to type search string.
+        # Button to quit the app.
+        options_frame = tk.Frame(self)
+        options_frame.pack()
+        quit_button = tk.Button(options_frame, text="Quit", command=self.quit)
+        quit_button.pack(side=tk.RIGHT)
 
-        f_top = tk.Frame(self)
-        f_top.pack()
-        self.string_entry = tk.Entry(f_top, width=40,  bg="#D3D3D3")
+        help_button = tk.Button(options_frame, text="Help", command=None)
+        help_button.pack(side=tk.LEFT)
+
+        # Entry to type search string.
+        search_frame = tk.Frame(self)
+        search_frame.pack()
+        self.string_entry = tk.Entry(search_frame, width=40,  bg="#D3D3D3")
         self.string_entry.pack(side=tk.LEFT)
 
         # Button to run main script.
-        go_button = tk.Button(f_top, text="Go", command=self.search_files)
+        go_button = tk.Button(search_frame, text="Go", command=self.search_files)
         go_button.pack(side=tk.LEFT)
-
-        # Button to quit the app.
-        quit_button = tk.Button(self, text="Quit", command=self.quit)
-        quit_button.pack()
 
         # Text box to display output of main text.
         self.text_box = ScrolledText(
