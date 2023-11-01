@@ -54,13 +54,11 @@ class App(tk.Tk):
 
     def search_files(self):
         """Search all files in specified directory"""
-        searchString = self.string_entry.get()
+        search_string = self.string_entry.get()
         self.text_box.delete("1.0", tk.END)
 
         # List to store all lines where string is found.
-        wordlist = []
-
-        wordlist = ['terror.fb2', 'time_child.fb2']
+        wordlist = self.searcher.search(search_string)
 
         self.print_to_textbox(wordlist)
 
@@ -68,7 +66,7 @@ class App(tk.Tk):
         """Print all lines in wordlist to textbox"""
 
         for lines in wordlist:
-            self.text_box.insert("end", "\n"+lines, self.hyperlink.add(partial(webbrowser.open, 'file:///home/cati0n/pyCommon/'+lines)))
+            self.text_box.insert("end", "\n"+lines, self.hyperlink.add(partial(webbrowser.open, 'file:///home/cati0n/Labs/7/ЕЯИИС/Information-retrieval/data/'+lines)))
         if len(wordlist) == 0:
             self.text_box.insert("1.0", "\nNothing To Display")
 

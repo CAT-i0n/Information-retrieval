@@ -15,7 +15,7 @@ class Document:
         self.PASS_SENTENCES = 20
         self.words = self.process_document(addr)
 
-    def process_document(self, addr: str, sent_num = 100) -> list:
+    def process_document(self, addr: str, sent_num = 200) -> list:
         book = open(addr, "r").read()
 
         sents = re.findall('<p>.+?</p>', book)[:sent_num+self.PASS_SENTENCES]
@@ -55,13 +55,14 @@ class DocumentManager:
     def compute_idf(self):
         for word in self.vocab:
             self.idf[word] = log(self.size/self.vocab[word])
-        print(Counter(self.idf.values()))
 
 
     def index_documents(self):
-        tf_idf = np.zeros((len(self.vocab)))
         for doc in self.documents:
+            tf_idf = np.zeros((len(self.vocab)))
             for i, word in enumerate(self.vocab):
                 tf_idf[i] = self.idf[word]*doc.words[word]/doc.words_num
             doc.tf_idf = tf_idf
-            print(tf_idf[:100])
+
+    def get_documents(self):
+        return self.documents
