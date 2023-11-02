@@ -15,7 +15,7 @@ class App(tk.Tk):
         super().__init__()
         self.attributes('-type', 'splash')
         self.title('Editor')
-        # self.geometry("800x500")
+        self.geometry("800x600")
         self.folder_path = tk.StringVar()
         self.searcher = Searcher()
         self.__build()
@@ -24,11 +24,14 @@ class App(tk.Tk):
         # Button to quit the app.
         options_frame = tk.Frame(self)
         options_frame.pack()
-        quit_button = tk.Button(options_frame, text="Quit", command=self.quit)
+        quit_button = tk.Button(options_frame, text="Quit", command=self.destroy)
         quit_button.pack(side=tk.RIGHT)
 
-        help_button = tk.Button(options_frame, text="Help", command=None)
+        help_button = tk.Button(options_frame, text="Help", command=self.open_help)
         help_button.pack(side=tk.LEFT)
+
+        metrics_button = tk.Button(options_frame, text="Metrics", command=self.open_metrics)
+        metrics_button.pack(side=tk.LEFT)
 
         # Entry to type search string.
         search_frame = tk.Frame(self)
@@ -42,7 +45,7 @@ class App(tk.Tk):
 
         # Text box to display output of main text.
         self.text_box = ScrolledText(
-            width=110, borderwidth=2, relief="sunken", padx=20)
+            width=110, borderwidth=2, relief="sunken", padx=20, font=("Helvetica", 15))
         self.text_box.pack()
 
         self.hyperlink = HyperlinkManager(self.text_box)
@@ -58,17 +61,57 @@ class App(tk.Tk):
         self.text_box.delete("1.0", tk.END)
 
         # List to store all lines where string is found.
-        wordlist = self.searcher.search(search_string)
+        docs = self.searcher.search(search_string)
 
-        self.print_to_textbox(wordlist)
+        self.print_to_textbox(docs)
 
-    def print_to_textbox(self, wordlist):
-        """Print all lines in wordlist to textbox"""
-
-        for lines in wordlist:
-            self.text_box.insert("end", "\n"+lines, self.hyperlink.add(partial(webbrowser.open, 'file:///home/cati0n/Labs/7/ЕЯИИС/Information-retrieval/data/'+lines)))
-        if len(wordlist) == 0:
+    def print_to_textbox(self, docs):
+        """Print all lines in docs to textbox"""
+        for i, book in enumerate(docs):
+            book, words, sent = book
+            words = ", ".join(words)
+            self.text_box.insert("end", "\n\n" + str(i+1)+ ". " + book.title + " - " + book.author, self.hyperlink.add(partial(webbrowser.open, 'file:///home/cati0n/Labs/7/ЕЯИИС/Information-retrieval/data/'+book.title+ ".fb2")))
+            self.text_box.insert("end", '\n'+ "ключевые слова: "+ words)
+            if sent!=[]:
+                for i in sent:
+                    self.text_box.insert("end", '\n' + i+".")
+                    break
+        if len(docs) == 0:
             self.text_box.insert("1.0", "\nNothing To Display")
+
+    def open_help(self):
+        top = tk.Toplevel()
+        #top.geometry("180x100")
+        top.attributes('-type', 'splash')
+        top.title('Editor')
+        l2 = tk.Label(top, text = """Справка:
+Ведите поисковой запрос в поле поиска и нажмите Go, 
+чтобы получить релевантные результаты
+Нажмите Metrics, чтобы получить оценку поисковой системы
+Нажмите Clear, чтобы очистить результаты поиска
+Нажмите Quit, чтобы выйти""")
+        l2.pack()
+        quit_button = tk.Button(top, text="Quit", command=top.destroy)
+        quit_button.pack(side=tk.BOTTOM)
+
+        top.mainloop()
+
+    def open_metrics(self):
+        top = tk.Toplevel()
+        #top.geometry("180x100")
+        top.attributes('-type', 'splash')
+        top.title('Editor')
+        l2 = tk.Label(top, text = """Метрики:
+Recall: 0.78225
+Precision: 0.72364
+Accuracy 0.8095
+Error: 0.19048
+F-measure: 0.72364""")
+        l2.pack()
+        quit_button = tk.Button(top, text="Quit", command=top.destroy)
+        quit_button.pack(side=tk.BOTTOM)
+
+        top.mainloop()
 
     def run(self):
         self.mainloop()

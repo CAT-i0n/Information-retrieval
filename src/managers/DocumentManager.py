@@ -5,25 +5,40 @@ from collections import Counter
 import os
 from math import log
 import numpy as np
+from tqdm import tqdm
 
 class Document:
     def __init__(self, title, addr):
-        self.title: str = title
-        #self.text: str = ""
+        self.title: str = title[:-4]
+        self.author: str = ""
         self.tf_idf = []
         self.words_num = 0
-        self.PASS_SENTENCES = 20
         self.words = self.process_document(addr)
 
     def process_document(self, addr: str, sent_num = 200) -> list:
         book = open(addr, "r").read()
 
-        sents = re.findall('<p>.+?</p>', book)[:sent_num+self.PASS_SENTENCES]
-        text = "".join(sents[self.PASS_SENTENCES:])
+        self.__set_author(book)
+        sents = re.findall('<p>.+?</p>', book)[:sent_num]
+        text = "".join(sents)
         text = re.sub('<.+?>|[^А-яЁё]', ' ', text.lower())
 
         words = text.split(" ")
         return self.__normalize_text(words)
+
+    def __set_author(self, book):
+        
+        author_pos_start = re.search('<first-name>', book)
+        author_pos_end = re.search('</first-name>', book)
+
+        self.author += book[author_pos_start.end():author_pos_end.start()]
+        
+        author_pos_start = re.search('<last-name>', book)
+        author_pos_end = re.search('</last-name>', book)
+        
+        self.author += " " + book[author_pos_start.end():author_pos_end.start()]
+
+        #print(self.author)
 
     def __normalize_text(self, words: list) -> str:
         stopWords = stopwords.words("russian") + ['']
@@ -44,7 +59,7 @@ class DocumentManager:
         self.index_documents()
 
     def load_documents(self):
-        for book in os.listdir(self.data_dir):
+        for book in tqdm(os.listdir(self.data_dir)):
             doc = Document(book, self.data_dir+book)
             words = doc.words
             for word in words:
