@@ -6,25 +6,24 @@ import os
 from math import log
 import numpy as np
 from tqdm import tqdm
+import couchdb
 
 class Document:
-    def __init__(self, title, addr):
+    def __init__(self, title, file):
         self.title: str = title[:-4]
         self.author: str = ""
         self.tf_idf = []
         self.words_num = 0
-        self.words = self.process_document(addr)
+        self.text = file.read().decode()
+        self.__set_author(self.text)
 
-    def process_document(self, addr: str, sent_num = 200) -> list:
-        book = open(addr, "r").read()
-
-        self.__set_author(book)
-        sents = re.findall('<p>.+?</p>', book)[:sent_num]
+    def process_document(self, sent_num = 10) -> list:
+        sents = re.findall('<p>.+?</p>', self.text)[:sent_num]
         text = "".join(sents)
         text = re.sub('<.+?>|[^А-яЁё]', ' ', text.lower())
 
         words = text.split(" ")
-        return self.__normalize_text(words)
+        self.words = self.__normalize_text(words)
 
     def __set_author(self, book):
         
@@ -54,18 +53,66 @@ class DocumentManager:
         self.documents: list = []
         self.vocab = {}
         self.idf = {}
-        self.load_documents()
-        self.compute_idf()
-        self.index_documents()
 
-    def load_documents(self):
+        server = couchdb.Server("http://admin:12345\@localhost:5984")
+        server.resource.credentials = ('admin', '12345')
+        self.db = server['books']
+        self.load_documents()
+        # self.compute_idf()
+        # self.index_documents()
+
+    def update_docs(self):
+        for id in self.db:
+            self.db.delete(self.db[id])
+        
         for book in tqdm(os.listdir(self.data_dir)):
-            doc = Document(book, self.data_dir+book)
+            self.db[book] = {}
+            file = open(self.data_dir+book)
+            self.db.put_attachment(self.db[book], file, filename=book)
+        
+        self.documents = []
+        for id in tqdm(self.db):
+            if id == 'vocab':
+                continue
+            file = self.db.get_attachment(self.db[id], id)
+            doc = Document(id, file)
+            doc.process_document()
             words = doc.words
             for word in words:
                 self.vocab[word] = self.vocab.get(word, 0) + 1
             self.documents.append(doc)
+
         self.size = len(self.documents)
+
+        self.compute_idf()
+        self.index_documents()
+
+        self.db['data'] = {'vocab' : self.vocab, 'idf': self.idf}
+
+        for doc in self.documents:
+            db_doc = self.db[doc.title + '.fb2']
+            db_doc['tf'] = doc.tf_idf.tolist()
+            self.db.update([db_doc])
+
+        
+
+        
+
+    def load_documents(self):
+        try:
+            for id in self.db:
+                if id == 'vocab':
+                    continue
+                file = self.db.get_attachment(self.db[id], id)
+                doc = Document(id, file)
+
+                doc.tf_idf = self.db[id]['tf']
+                self.documents.append(doc)
+            self.size = len(self.documents)
+            self.vocab = self.db['data']['vocab']
+            self.idf = self.db['data']['idf']
+        except:
+            self.update_docs()
 
     def compute_idf(self):
         for word in self.vocab:

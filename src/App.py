@@ -30,6 +30,9 @@ class App(tk.Tk):
         help_button = tk.Button(options_frame, text="Help", command=self.open_help)
         help_button.pack(side=tk.LEFT)
 
+        update_button = tk.Button(options_frame, text="Update", command=self.update_docs)
+        update_button.pack(side=tk.LEFT)
+
         metrics_button = tk.Button(options_frame, text="Metrics", command=self.open_metrics)
         metrics_button.pack(side=tk.LEFT)
 
@@ -55,6 +58,9 @@ class App(tk.Tk):
             self, text="Clear", command=lambda: self.text_box.delete("1.0", tk.END))
         clear_button.pack()
 
+    def update_docs(self):
+        self.searcher.manager.update_docs()
+
     def search_files(self):
         """Search all files in specified directory"""
         search_string = self.string_entry.get()
@@ -68,14 +74,10 @@ class App(tk.Tk):
     def print_to_textbox(self, docs):
         """Print all lines in docs to textbox"""
         for i, book in enumerate(docs):
-            book, words, sent = book
+            book, words = book
             words = ", ".join(words)
             self.text_box.insert("end", "\n\n" + str(i+1)+ ". " + book.title + " - " + book.author, self.hyperlink.add(partial(webbrowser.open, 'file:///home/cati0n/Labs/7/ЕЯИИС/Information-retrieval/data/'+book.title+ ".fb2")))
             self.text_box.insert("end", '\n'+ "ключевые слова: "+ words)
-            if sent!=[]:
-                for i in sent:
-                    self.text_box.insert("end", '\n' + i+".")
-                    break
         if len(docs) == 0:
             self.text_box.insert("1.0", "\nNothing To Display")
 
