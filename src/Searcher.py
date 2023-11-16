@@ -32,7 +32,9 @@ class Searcher:
             #key_sents = []
             if len(key_words)>0:
                 doc_key_words.append(key_words)
-                dist.append(scipy.spatial.distance.cosine(query_tf_idf, doc.tf_idf))
+                dist.append(scipy.spatial.distance.cosine(query_tf_idf, doc.tf_idf)*
+                            scipy.spatial.distance.euclidean(query_tf_idf, doc.tf_idf)*
+                            (scipy.spatial.distance.chebyshev(query_tf_idf, doc.tf_idf)))
                 # doc = open(self.manager.data_dir+doc.title+".fb2", "r").read()
                 # sents = re.findall('<p>.+?</p>', doc)[:200]
                 # parts = []

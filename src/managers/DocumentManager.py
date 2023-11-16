@@ -17,7 +17,7 @@ class Document:
         self.text = file.read().decode()
         self.__set_author(self.text)
 
-    def process_document(self, sent_num = 10) -> list:
+    def process_document(self, sent_num = 1000) -> list:
         sents = re.findall('<p>.+?</p>', self.text)[:sent_num]
         text = "".join(sents)
         text = re.sub('<.+?>|[^А-яЁё]', ' ', text.lower())
@@ -72,7 +72,7 @@ class DocumentManager:
         
         self.documents = []
         for id in tqdm(self.db):
-            if id == 'vocab':
+            if id == 'data':
                 continue
             file = self.db.get_attachment(self.db[id], id)
             doc = Document(id, file)
@@ -83,6 +83,7 @@ class DocumentManager:
             self.documents.append(doc)
 
         self.size = len(self.documents)
+        self.norm_size = self.size**0.5
 
         self.compute_idf()
         self.index_documents()
@@ -101,14 +102,16 @@ class DocumentManager:
     def load_documents(self):
         try:
             for id in self.db:
-                if id == 'vocab':
+                if id == 'data':
                     continue
                 file = self.db.get_attachment(self.db[id], id)
+                print(file)
                 doc = Document(id, file)
 
                 doc.tf_idf = self.db[id]['tf']
                 self.documents.append(doc)
             self.size = len(self.documents)
+            self.norm_size = self.size**0.5
             self.vocab = self.db['data']['vocab']
             self.idf = self.db['data']['idf']
         except:
@@ -116,7 +119,7 @@ class DocumentManager:
 
     def compute_idf(self):
         for word in self.vocab:
-            self.idf[word] = log(self.size/self.vocab[word])
+            self.idf[word] = (log(self.size/self.vocab[word])+1)/self.norm_size
 
 
     def index_documents(self):
